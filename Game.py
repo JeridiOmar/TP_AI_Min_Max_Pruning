@@ -136,6 +136,97 @@ class Game:
                     self.current_state = stack_before[:]
         return (minv, index, sum_list)
 
+    def max_alpha_beta_pruning(self, alpha, beta):
+
+        # Possible values for maxv are:
+        # -1 - loss
+        # 1  - win
+
+        # We're initially setting it to -2 as worse than the worst case:
+        maxv = float('-inf')
+
+        index = None
+        sum_list = None
+        self.player_turn = 'Max'
+        result = self.is_end()
+
+        # If the game came to an end, the function needs to return
+        # the evaluation function of the end. That can be:
+        # -1 - loss
+        # 1  - win
+        if result == 'Min':
+            return (1, 0, 0)
+        elif result == 'Max':
+            return (-1, 0, 0)
+        # we will loop on the current stack chips
+        stack_before = copy.deepcopy(self.current_state)
+        for i in range(0, len(self.current_state)):
+            # test if the chips is greater than two then we can still devid it
+            if self.current_state[i] > 2:
+                sum_list = self.possible_sum(self.current_state[i])
+                for sum in sum_list:
+                    # here sum is a list composed of the two numbers in the sum of current number for exple 7 => [6,1]
+                    self.explode_stack(i, sum)
+                    (m, min_i, min_j) = self.min()
+                    if m > maxv:
+                        maxv = m
+                        index = i
+                        sum_list = sum
+                    self.current_state = stack_before[:]
+                    # the only diff with the normal max
+                    if maxv >= beta:
+                        return (maxv, index, sum_list)
+
+                    if maxv > alpha:
+                        alpha = maxv
+        return (maxv, index, sum_list)
+
+    def min_alpha_beta_pruning(self, alpha, beta):
+
+        # Possible values for maxv are:
+        # -1 - loss
+        # 1  - win
+
+        # We're initially setting it to +inf as worse than the worst case:
+        minv = float('inf')
+
+        index = None
+        sum_list = None
+        self.player_turn = 'Min'
+        result = self.is_end()
+
+        # If the game came to an end, the function needs to return
+        # the evaluation function of the end. That can be:
+        # -1 - loss
+        # 1  - win
+        if result == 'Min':
+            return (1, 0, 0)
+        elif result == 'Max':
+            return (-1, 0, 0)
+        self.player_turn = 'Min'
+        # we will loop on the current stack chips
+        stack_before = copy.deepcopy(self.current_state)
+        for i in range(0, len(self.current_state)):
+            # test if the chips is greater than two then we can still divide it
+            if self.current_state[i] > 2:
+                sum_list = self.possible_sum(self.current_state[i])
+                for sum in sum_list:
+                    # here sum is a list composed of the two numbers in the sum of current number for exple 7 => [6,1]
+                    self.explode_stack(i, sum)
+                    (m, max_index, max_sum) = self.max()
+                    if m < minv:
+                        minv = m
+                        index = i
+                        sum_list = sum
+                    self.current_state = stack_before[:]
+                    # The only diff with normal min
+                    if minv <= alpha:
+                        return (minv, index, sum_list)
+
+                    if minv < beta:
+                        beta = minv
+        return (minv, index, sum_list)
+
     def play(self):
         while True:
             self.draw_board()
@@ -170,14 +261,6 @@ class Game:
 
                     if self.is_valid(player_index, player_sum):
                         self.explode_stack(player_index, player_sum)
-                        # self.result = self.is_end()
-                        #
-                        # # Printing the appropriate message if the game has ended
-                        # if self.result != None:
-                        #     if self.result == 'Min':
-                        #         print('The winner is IA!')
-                        #     elif self.result == 'Max':
-                        #         print('The winner is Human!')
                         self.player_turn = 'Max'
                         break
                     else:
@@ -195,4 +278,50 @@ class Game:
                 #         print('The winner is IA!')
                 #     elif self.result == 'Max':
                 #         print('The winner is Human!')
+                self.player_turn = 'Min'
+
+    def play_with_pruning(self):
+        while True:
+            self.draw_board()
+            self.result = self.is_end()
+
+            # Printing the appropriate message if the game has ended
+            if self.result != None:
+                if self.result == 'Min':
+                    print('The winner is IA!')
+                elif self.result == 'Max':
+                    print('The winner is Human!')
+
+                self.initialize_game()
+                return
+
+            # If it's player's turn
+            if self.player_turn == 'Min':
+
+                while True:
+
+                    start = time.time()
+                    (m, index, sum) = self.min_alpha_beta_pruning(-2, 2)
+                    end = time.time()
+                    print('Evaluation time: {}s'.format(round(end - start, 7)))
+                    print('Recommended move: Stack Index = {}, Sum = {}'.format(index, sum))
+
+                    player_index = int(input('Insert the index of the stack to explode: '))
+                    player_sum_1st_member = int(input('Insert the sum 1st member: '))
+                    player_sum_2nd_member = int(input('Insert the sum 2nd member: '))
+                    player_sum = [player_sum_1st_member, player_sum_2nd_member]
+                    (index, sum) = (player_index, player_index)
+
+                    if self.is_valid(player_index, player_sum):
+                        self.explode_stack(player_index, player_sum)
+                        self.player_turn = 'Max'
+                        break
+                    else:
+                        print('The move is not valid! Try again.')
+
+            # If it's AI's turn
+            else:
+                (m, index, sum) = self.max_alpha_beta_pruning(-2, 2)
+                self.explode_stack(index, sum)
+                self.result = self.is_end()
                 self.player_turn = 'Min'
