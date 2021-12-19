@@ -21,7 +21,7 @@ class Game:
         print()
 
     def is_valid(self, index: int, new_stack: list):
-        # index is an intiger of the list to explode
+        # index is an integer of the list to explode
         # newList is the result of the exploded list only
         # newList must be appended then to the state
         if self.current_state[index] <= 2:
@@ -67,7 +67,7 @@ class Game:
         maxv = float('-inf')
 
         index = None
-        sum_list = None
+        sum_result = None
         self.player_turn = 'Max'
         result = self.is_end()
 
@@ -76,11 +76,12 @@ class Game:
         # -1 - loss
         # 1  - win
         if result == 'Min':
-            return (1, 0, 0)
+            return (1, 0, 0,1)
         elif result == 'Max':
-            return (-1, 0, 0)
+            return (-1, 0, 0,1)
         # we will loop on the current stack chips
         stack_before = copy.deepcopy(self.current_state)
+        visited_nodes=0
         for i in range(0, len(self.current_state)):
             # test if the chips is greater than two then we can still devid it
             if self.current_state[i] > 2:
@@ -88,13 +89,14 @@ class Game:
                 for sum in sum_list:
                     # here sum is a list composed of the two numbers in the sum of current number for exple 7 => [6,1]
                     self.explode_stack(i, sum)
-                    (m, min_i, min_j) = self.min()
+                    (m, min_i, min_j,child_visited_nodes) = self.min()
+                    visited_nodes=visited_nodes+child_visited_nodes+1
                     if m > maxv:
                         maxv = m
                         index = i
-                        sum_list = sum
+                        sum_result = sum
                     self.current_state = stack_before[:]
-        return (maxv, index, sum_list)
+        return (maxv, index, sum_result,visited_nodes)
 
     def min(self):
 
@@ -106,7 +108,7 @@ class Game:
         minv = float('inf')
 
         index = None
-        sum_list = None
+        sum_result = None
         self.player_turn = 'Min'
         result = self.is_end()
 
@@ -115,12 +117,13 @@ class Game:
         # -1 - loss
         # 1  - win
         if result == 'Min':
-            return (1, 0, 0)
+            return (1, 0, 0,1)
         elif result == 'Max':
-            return (-1, 0, 0)
+            return (-1, 0, 0,1)
         self.player_turn = 'Min'
         # we will loop on the current stack chips
         stack_before = copy.deepcopy(self.current_state)
+        visited_nodes=0
         for i in range(0, len(self.current_state)):
             # test if the chips is greater than two then we can still divide it
             if self.current_state[i] > 2:
@@ -128,13 +131,14 @@ class Game:
                 for sum in sum_list:
                     # here sum is a list composed of the two numbers in the sum of current number for exple 7 => [6,1]
                     self.explode_stack(i, sum)
-                    (m, max_index, max_sum) = self.max()
+                    (m, max_index, max_sum,child_visited_nodes) = self.max()
+                    visited_nodes=visited_nodes+child_visited_nodes+1
                     if m < minv:
                         minv = m
                         index = i
-                        sum_list = sum
+                        sum_result = sum
                     self.current_state = stack_before[:]
-        return (minv, index, sum_list)
+        return (minv, index, sum_result,visited_nodes)
 
     def max_alpha_beta_pruning(self, alpha, beta):
 
@@ -146,7 +150,7 @@ class Game:
         maxv = float('-inf')
 
         index = None
-        sum_list = None
+        sum_result = None
         self.player_turn = 'Max'
         result = self.is_end()
 
@@ -155,11 +159,12 @@ class Game:
         # -1 - loss
         # 1  - win
         if result == 'Min':
-            return (1, 0, 0)
+            return (1, 0, 0,1)
         elif result == 'Max':
-            return (-1, 0, 0)
+            return (-1, 0, 0,1)
         # we will loop on the current stack chips
         stack_before = copy.deepcopy(self.current_state)
+        visited_nodes=0
         for i in range(0, len(self.current_state)):
             # test if the chips is greater than two then we can still devid it
             if self.current_state[i] > 2:
@@ -167,19 +172,20 @@ class Game:
                 for sum in sum_list:
                     # here sum is a list composed of the two numbers in the sum of current number for exple 7 => [6,1]
                     self.explode_stack(i, sum)
-                    (m, min_i, min_j) = self.min()
+                    (m, min_i, min_j,child_visied_nodes) = self.min_alpha_beta_pruning(alpha, beta)
+                    visited_nodes=visited_nodes+child_visied_nodes+1
                     if m > maxv:
                         maxv = m
                         index = i
-                        sum_list = sum
+                        sum_result = sum
                     self.current_state = stack_before[:]
                     # the only diff with the normal max
                     if maxv >= beta:
-                        return (maxv, index, sum_list)
+                        return (maxv, index, sum_result,visited_nodes)
 
                     if maxv > alpha:
                         alpha = maxv
-        return (maxv, index, sum_list)
+        return (maxv, index, sum_result,visited_nodes)
 
     def min_alpha_beta_pruning(self, alpha, beta):
 
@@ -191,7 +197,7 @@ class Game:
         minv = float('inf')
 
         index = None
-        sum_list = None
+        sum_result = None
         self.player_turn = 'Min'
         result = self.is_end()
 
@@ -200,12 +206,13 @@ class Game:
         # -1 - loss
         # 1  - win
         if result == 'Min':
-            return (1, 0, 0)
+            return (1, -1, [],1)
         elif result == 'Max':
-            return (-1, 0, 0)
+            return (-1, -1, [],1)
         self.player_turn = 'Min'
         # we will loop on the current stack chips
         stack_before = copy.deepcopy(self.current_state)
+        visited_nodes=0
         for i in range(0, len(self.current_state)):
             # test if the chips is greater than two then we can still divide it
             if self.current_state[i] > 2:
@@ -213,19 +220,20 @@ class Game:
                 for sum in sum_list:
                     # here sum is a list composed of the two numbers in the sum of current number for exple 7 => [6,1]
                     self.explode_stack(i, sum)
-                    (m, max_index, max_sum) = self.max()
+                    (m, max_index, max_sum,child_visited_nodes) = self.max_alpha_beta_pruning(alpha, beta)
+                    visited_nodes=visited_nodes+child_visited_nodes+1
                     if m < minv:
                         minv = m
                         index = i
-                        sum_list = sum
+                        sum_result = sum
                     self.current_state = stack_before[:]
                     # The only diff with normal min
                     if minv <= alpha:
-                        return (minv, index, sum_list)
+                        return (minv, index, sum_result,visited_nodes)
 
                     if minv < beta:
                         beta = minv
-        return (minv, index, sum_list)
+        return (minv, index, sum_result,visited_nodes)
 
     def play(self):
         while True:
@@ -248,7 +256,7 @@ class Game:
                 while True:
 
                     start = time.time()
-                    (m, index, sum) = self.min()
+                    (m, index, sum,visited_nodes) = self.min()
                     end = time.time()
                     print('Evaluation time: {}s'.format(round(end - start, 7)))
                     print('Recommended move: Stack Index = {}, Sum = {}'.format(index, sum))
@@ -268,16 +276,9 @@ class Game:
 
             # If it's AI's turn
             else:
-                (m, index, sum) = self.max()
+                (m, index, sum,visited_nodes) = self.max()
                 self.explode_stack(index, sum)
                 self.result = self.is_end()
-
-                # Printing the appropriate message if the game has ended
-                # if self.result != None:
-                #     if self.result == 'Min':
-                #         print('The winner is IA!')
-                #     elif self.result == 'Max':
-                #         print('The winner is Human!')
                 self.player_turn = 'Min'
 
     def play_with_pruning(self):
@@ -301,7 +302,7 @@ class Game:
                 while True:
 
                     start = time.time()
-                    (m, index, sum) = self.min_alpha_beta_pruning(-2, 2)
+                    (m, index, sum,visited_nodes) = self.min_alpha_beta_pruning(-2, 2)
                     end = time.time()
                     print('Evaluation time: {}s'.format(round(end - start, 7)))
                     print('Recommended move: Stack Index = {}, Sum = {}'.format(index, sum))
@@ -321,7 +322,49 @@ class Game:
 
             # If it's AI's turn
             else:
-                (m, index, sum) = self.max_alpha_beta_pruning(-2, 2)
+                (m, index, sum,visited_nodes) = self.max_alpha_beta_pruning(-2, 2)
                 self.explode_stack(index, sum)
                 self.result = self.is_end()
                 self.player_turn = 'Min'
+
+    def play_simulation(self, pruning):
+        while True:
+            self.draw_board()
+            self.result = self.is_end()
+
+            # Printing the appropriate message if the game has ended
+            if self.result != None:
+                if self.result == 'Min':
+                    print('The winner is IA!')
+                elif self.result == 'Max':
+                    print('The winner is Human!')
+
+                self.initialize_game()
+                return
+
+            # If it's player's turn
+            if self.player_turn == 'Min':
+                start = time.time()
+                if pruning:
+                    (m, index, sum,visited_nodes) = self.min_alpha_beta_pruning(-2, 2)
+                else:
+                    (m, index, sum,visited_nodes) = self.min()
+                end = time.time()
+                self.explode_stack(index, sum)
+                self.player_turn = 'Max'
+            # If it's AI's turn
+            else:
+                if pruning:
+                    (m, index, sum,visited_nodes) = self.max_alpha_beta_pruning(-2, 2)
+                else:
+                    (m, index, sum,visited_nodes) = self.max()
+                self.explode_stack(index, sum)
+                self.result = self.is_end()
+                self.player_turn = 'Min'
+
+    def max_visited_nodes(self,pruning):
+        if(pruning):
+            (max, index, sum, visited_nodes) = self.max_alpha_beta_pruning(-2,2)
+        else:
+            (max, index, sum, visited_nodes) = self.max()
+        return visited_nodes
